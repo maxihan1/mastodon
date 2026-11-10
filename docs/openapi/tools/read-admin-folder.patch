@@ -1,0 +1,26 @@
+diff --git a/src/source/FileSystemSource.ts b/src/source/FileSystemSource.ts
+index ab78267..796a300 100644
+--- a/src/source/FileSystemSource.ts
++++ b/src/source/FileSystemSource.ts
+@@ -26,14 +26,17 @@ export class FileSystemSource implements DocumentSource {
+       );
+     }
+ 
+-    return fs
+-      .readdirSync(directory)
++    // 하위 폴더(methods/admin)도 읽는다 — 원본은 맨 윗단만 읽어 관리자 API 경로가 빠졌다
++    const files = fs
++      .readdirSync(directory, { recursive: true, encoding: 'utf-8' })
++      .map((file) => file.split(path.sep).join('/'))
+       .filter(
+         (file) =>
+           file.endsWith('.md') &&
++          !(file.includes('/') && file.endsWith('_index.md')) &&
+           fs.statSync(path.join(directory, file)).isFile()
+-      )
+-      .sort();
++      );
++    return kind === 'method' ? files.sort() : files.filter((f) => !f.includes('/')).sort();
+   }
+ 
+   public read(kind: DocumentKind, id: string): string {
